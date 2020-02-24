@@ -1,19 +1,29 @@
-Nvals <- c(0,1,2,4,8,16)
-dvals <- c(4,8)
+#### Create Data ####
+setwd("~/Desktop/Werner_Project/Files for New Simulation")
+source('All_CWC_Functions_20200213.R', echo=FALSE)
+X <- generate_simplex_data(n=5000,M=2,N=100,d=5,distribution="normal",scale=1)
 
-for(d in dvals){
-  plots <- list()
-  for(i in 1:length(Nvals)){
-    N <- Nvals[i]
-    load(paste0("~/Desktop/Werner_Project/n200_M2_N",N,"_d",d,"_normal_1/data2.RData"))
-    distMatrix <- as.matrix(dist(X,diag = TRUE, upper = TRUE))
-    plots[[i]]<-ggplot(data=as.data.frame(cmdscale(d = distMatrix, k = 2, eig = FALSE)),
-                       aes(V1,V2))+geom_point()+
-                labs(x=paste0("Average Distance=",round(mean(dist(X)),3)),
-                     title=paste0("Two Standard Gaussians,\nd=",d,"; N=",N))
-  }
-  do.call("grid.arrange", c(plots, nrow=2,ncol=3))
-  ggsave(paste0("MDS_d",d,".png"),
-         plot = do.call("grid.arrange", c(plots, nrow=2,ncol=3)),
-         width =8, height = 6,scale = 1.5,dpi = 300)
+#### Plot Data Together
+par(mfrow=c(2,3))
+for(i in c(3,7,12,22,52,102)){
+  signal_only <- X[,1:2]
+  pca_transformed <- X[,1:i] %*% prcomp(X[,1:i])$rotation[,1:2]
+  procrusted_data <- procrustes(signal_only,pca_transformed)
+  plot(procrusted_data$X,pch=16,cex=.2,xlab="",ylab="",
+       main=paste0("Centered Signal Data,\nProcrusted Transform of ",
+                   i-2,"\nAdded Noise Dimensions"))
+  points(procrusted_data$Yrot,col="blue",pch=16,cex=.2)
+  legend("topright",legend=c("Signal","Noisy"),col=c("black","blue"),pch=16)
+}
+
+#### Plot Data Side-by-Side
+par(mfrow=c(3,2))
+plot(procrusted_data$X,pch=16,cex=.3,xlab="",ylab="",
+     main=paste0("Centered Signal Data"))
+for(i in c(3,7,12,52,102)){
+  signal_only <- X[,1:2]
+  pca_transformed <- X[,1:i] %*% prcomp(X[,1:i])$rotation[,1:2]
+  procrusted_data <- procrustes(signal_only,pca_transformed)
+  plot(procrusted_data$Yrot,col="blue",pch=16,cex=.3,xlab="",ylab="",
+       main=paste0("Procrusted Transform of ",i-2,"\nAdded Noise Dimensions"))
 }
